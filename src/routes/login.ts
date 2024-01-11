@@ -153,7 +153,7 @@ async function signUp(req: Request, res: Response) {
 
       // Calculate the next userId
       const nextUserId = (maxUserId?.userId ? parseInt(maxUserId.userId.slice(3)) : 1000) + 1;
-      const formattedUserId = `ATKSMV${nextUserId}`;
+      const formattedUserId = `ATK${nextUserId}`;
 
       const newUser = await prisma.user.create({
           data: {
