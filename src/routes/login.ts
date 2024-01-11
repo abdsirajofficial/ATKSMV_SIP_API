@@ -112,29 +112,6 @@ async function signUp(req: Request, res: Response) {
         });
       }
 
-      // const existingMobile = await prisma.user.findUnique({
-      //   where: {
-      //       mobile: resultData.mobile
-      //   }
-      // });
-
-      // if(existingMobile){
-      //   return res.status(400).json({
-      //       error: 'User with this mobile number is already exists.',
-      //     });
-      // }
-
-      // const existingMobile2 = await prisma.user.findUnique({
-      //   where: {
-      //       secondary_mobile: resultData.secondary_mobile
-      //   }
-      // });
-
-      // if(existingMobile2){
-      //   return res.status(400).json({
-      //       error: 'User with this secondary mobile number is already exists.',
-      //     });
-      // }
 
       const hashedPassword = crypto
           .createHmac('sha256', encryptKey)
@@ -152,8 +129,11 @@ async function signUp(req: Request, res: Response) {
       });
 
       // Calculate the next userId
-      const nextUserId = (maxUserId?.userId ? parseInt(maxUserId.userId.slice(3)) : 1000) + 1;
-      const formattedUserId = `ATK${nextUserId}`;
+    let nextUserId = 1000;
+    if (maxUserId && maxUserId.userId) {
+      nextUserId = parseInt(maxUserId.userId.slice(3), 10) + 1;
+    }
+    const formattedUserId = `ATK${nextUserId}`;
 
       const newUser = await prisma.user.create({
           data: {
@@ -180,6 +160,5 @@ async function signUp(req: Request, res: Response) {
       return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
-
 //#endregion
 
