@@ -77,7 +77,7 @@ async function login(req: Request, res: Response) {
 }
 
 function getPasswordHash(password: string): string {
-    return crypto.createHmac('sha256', encryptKey).update(password).digest('hex');
+  return crypto.createHmac('sha256', encryptKey).update(password).digest('hex');
 }
 
 //#endregion
@@ -87,78 +87,105 @@ function getPasswordHash(password: string): string {
 async function signUp(req: Request, res: Response) {
   try {
 
-        const data = signUpSchema.safeParse(req.body);
+    const data = signUpSchema.safeParse(req.body);
 
-        if (!data.success) {
-            let errMessage: string = fromZodError(data.error).message;
-            return res.status(400).json({
-              error: {
-                message: errMessage,
-              },
-            });
-          }
-      
-          const resultData: signUpData = data.data;
-
-      const existingUser = await prisma.user.findUnique({
-          where: {
-              email: resultData.email
-          }
+    if (!data.success) {
+      let errMessage: string = fromZodError(data.error).message;
+      return res.status(400).json({
+        error: {
+          message: errMessage,
+        },
       });
-  
-      if (existingUser) {
-        return res.status(400).json({
-          error: 'User with this email already exists.',
-        });
-      }
-
-
-      const hashedPassword = crypto
-          .createHmac('sha256', encryptKey)
-          .update(resultData.password)
-          .digest('hex');
-
-      // Retrieve the maximum current userId
-      const maxUserId = await prisma.user.findFirst({
-          select: {
-              userId: true
-          },
-          orderBy: {
-              userId: 'desc'
-          }
-      });
-
-      // Calculate the next userId
-    let nextUserId = 1000;
-    if (maxUserId && maxUserId.userId) {
-      nextUserId = parseInt(maxUserId.userId.slice(3), 10) + 1;
     }
-    const formattedUserId = `ATK${nextUserId}`;
 
-      const newUser = await prisma.user.create({
-          data: {
-              userId: formattedUserId,
-              name : resultData.name,
-          email: resultData.email,
-          password: hashedPassword,
-          DOB: resultData.DOB,
-          aadhar: resultData.aadhar,
-          pan: resultData.pan,
-          mobile: resultData.mobile,
-          address: resultData.address,
-          secondary_mobile: resultData.secondary_mobile,
-          upi_id: resultData.upi_id,
-          account_no: resultData.account_no,
-          account_holder: resultData.account_holder,
-          IFSC: resultData.IFSC
-          },
+    const resultData: signUpData = data.data;
+
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: resultData.email
+      }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        error: 'User with this email already exists.',
       });
+    }
 
-      return res.status(200).json({ message: 'User registered successfully', userId: newUser.id });
+    // const existingMobile = await prisma.user.findUnique({
+    //   where: {
+    //       mobile: resultData.mobile
+    //   }
+    // });
+
+    // if(existingMobile){
+    //   return res.status(400).json({
+    //       error: 'User with this mobile number is already exists.',
+    //     });
+    // }
+
+    // const existingMobile2 = await prisma.user.findUnique({
+    //   where: {
+    //       secondary_mobile: resultData.secondary_mobile
+    //   }
+    // });
+
+    // if(existingMobile2){
+    //   return res.status(400).json({
+    //       error: 'User with this secondary mobile number is already exists.',
+    //     });
+    // }
+
+    const hashedPassword = crypto
+      .createHmac('sha256', encryptKey)
+      .update(resultData.password)
+      .digest('hex');
+
+    // Retrieve the maximum current userId
+    const maxUserId = await prisma.user.findFirst({
+      select: {
+        userId: true
+      },
+      orderBy: {
+        userId: 'desc'
+      }
+    });
+
+    const prefix = 'ATKSMV';
+
+    const newUser = await prisma.user.create({
+      data: {
+        userId: null,
+        name: resultData.name,
+        email: resultData.email,
+        password: hashedPassword,
+        DOB: resultData.DOB,
+        aadhar: resultData.aadhar,
+        pan: resultData.pan,
+        mobile: resultData.mobile,
+        address: resultData.address,
+        secondary_mobile: resultData.secondary_mobile,
+        upi_id: resultData.upi_id,
+        account_no: resultData.account_no,
+        account_holder: resultData.account_holder,
+        IFSC: resultData.IFSC
+      },
+    });
+
+    await prisma.user.update({
+      where:{
+        id:newUser.id
+      },
+      data: {
+        userId: `ATKSMV${newUser?.id + 1000}`,
+      },
+    });
+
+    return res.status(200).json({ message: 'User registered successfully', userId: newUser.id });
   } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+    console.log(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
-//#endregion
 
+//#endregion
