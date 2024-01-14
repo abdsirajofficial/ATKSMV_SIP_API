@@ -2,6 +2,9 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import express, { Request, Response, Router } from 'express';
 import { userEditData, userEditSchema } from '../model/admin';
 import { fromZodError } from 'zod-validation-error';
+import crypto from 'crypto';
+
+const encryptKey = '"kzbvjl3841yk^%$756342ds!@#$%^&gb43fs!@#$%^&bsd75?xjvbjz"';
 
 const prisma = new PrismaClient();
 
@@ -26,15 +29,15 @@ async function getUsers(req: Request, res: Response) {
       userId?: string;
       email?: string;
       mobile?: string;
-      status?: string; 
+      status?: string;
     } = {
     };
 
-      if (req.query.status) {
-        whereCondition.status = req.query.status as string;
-      } else {
-        whereCondition.status = "Active";
-      }
+    if (req.query.status) {
+      whereCondition.status = req.query.status as string;
+    } else {
+      whereCondition.status = "Active";
+    }
 
     if (req.query.name) {
       whereCondition.name = req.query.name as string;
@@ -122,54 +125,63 @@ async function editUser(req: Request, res: Response) {
     if ('name' in updateFields) {
       updateData.name = resultData.name;
     }
-    
+
     if ('email' in updateFields) {
       updateData.email = resultData.email;
     }
-    
+
     if ('password' in updateFields) {
-      updateData.password = resultData.password;
-    }
+      if (updateFields.password.length > 0) {
+        // Ensure that resultData.password is defined before using it
+        const password = resultData.password ?? '';
+        const hashedPassword = crypto
+          .createHmac('sha256', encryptKey)
+          .update(password) // Use the non-nullable password variable here
+          .digest('hex');
     
+        updateData.password = hashedPassword;
+      }
+    }
+
     if ('DOB' in updateFields) {
       updateData.DOB = resultData.DOB;
     }
 
-    if('aadhar' in updateFields)  {
+    if ('aadhar' in updateFields) {
       updateData.aadhar = resultData.aadhar;
     }
-    if('pan' in updateFields)  {
+    if ('pan' in updateFields) {
       updateData.pan = resultData.pan;
     }
-    
+
     if ('mobile' in updateFields) {
       updateData.mobile = resultData.mobile;
     }
-    
+
     if ('secondary_mobile' in updateFields) {
       updateData.secondary_mobile = resultData.secondary_mobile;
     }
-    
+
     if ('address' in updateFields) {
       updateData.address = resultData.address;
     }
-    
+
     if ('account_no' in updateFields) {
       updateData.account_no = resultData.account_no;
     }
-    
+
     if ('upi_id' in updateFields) {
       updateData.upi_id = resultData.upi_id;
     }
-    
+
     if ('account_holder' in updateFields) {
       updateData.account_holder = resultData.account_holder;
     }
-    
+
     if ('IFSC' in updateFields) {
       updateData.IFSC = resultData.IFSC;
     }
-    
+
     if ('amount' in updateFields) {
       updateData.amount = resultData.amount;
     }
@@ -251,8 +263,8 @@ async function deleteUser(req: Request, res: Response) {
 
 //#region
 //get admin data
-async function getAdmin(req: Request,res :Response) {
-  try{
+async function getAdmin(req: Request, res: Response) {
+  try {
 
     const admin = await prisma.user.findMany({
       where: {
@@ -264,7 +276,7 @@ async function getAdmin(req: Request,res :Response) {
       admin: admin
     })
 
-  } catch(err) {
+  } catch (err) {
     return res.status(400).json({
       error: err
     })
