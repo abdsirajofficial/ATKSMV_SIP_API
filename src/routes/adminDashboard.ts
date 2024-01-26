@@ -19,7 +19,9 @@ async function getDashboard(req: Request, res: Response) {
 
     try {
         const [allTransactions, allHistory] = await Promise.all([
-            prisma.transaction.findMany(),
+            prisma.transaction.findMany({where:{
+                status:"Success"
+            }}),
             prisma.history.findMany()
         ]);
 
@@ -31,6 +33,7 @@ async function getDashboard(req: Request, res: Response) {
                         gte: startOfMonthDate,
                         lte: endOfMonthDate,
                     },
+                    status:"Success"
                 },
             }),
             prisma.history.findMany({
